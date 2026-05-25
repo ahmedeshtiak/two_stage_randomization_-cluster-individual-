@@ -19,7 +19,7 @@ cap log close _all
 cap estimates drop _all
 
 **# Directory setup
-global randomization "E:\Books and Notes\Lectures\STATA\Randomization Johirul Bhai\assignment"
+global randomization "D:\Ahmed Eshtiak\Local Disk D\STATA Github\two_stage_randomization_cluster_and_individual"
 global RAW      "${randomization}\01_raw"
 global CLEAN    "${randomization}\02_clean"
 global DO       "${randomization}\03_do"
