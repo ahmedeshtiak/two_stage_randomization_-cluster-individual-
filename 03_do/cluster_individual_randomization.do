@@ -1,5 +1,5 @@
 /*******************************************************************************
-Project:		Randomization Assignment 
+Project:		Individual and Cluster Randomization Assignment 
 Organization:	BIGD, BracU
 Author:			Ahmed Eshtiak
 Date created:	20/02/2026
@@ -32,11 +32,11 @@ use "${RAW}\radomization_dataset.dta", clear
 destring new_cluster, replace force
 gen cluster_id = zone_code*1000 + new_cluster
 
-* Tag unique mothers per cluster
+**# Tag unique mothers per cluster
 bysort cluster_id id: gen tagid = (_n == 1)
 bysort cluster_id: egen cluster_mothers = total(tagid)
 
-* Drop clusters with fewer than 16 mothers
+**# Drop clusters with fewer than 16 mothers
 keep if cluster_mothers >= 16
 save "${CLEAN}\eligible_clusters.dta", replace
 
@@ -52,7 +52,7 @@ gen treat_cluster = (_n <= 150)
 keep cluster_id treat_cluster
 save "${CLEAN}\cluster_assignment.dta", replace
 
-* Merge treatment indicator back to full eligible dataset
+**# Merge treatment indicator back to full eligible dataset
 use "${CLEAN}\eligible_clusters.dta", clear
 merge m:1 cluster_id using "${CLEAN}\cluster_assignment.dta", nogen
 
@@ -65,18 +65,18 @@ merge m:1 cluster_id using "${CLEAN}\cluster_assignment.dta", nogen
 keep if treat_cluster == 1                  // only treatment clusters
 bysort cluster_id id: keep if _n == 1       // unique mothers
 
-* Assign random ranks within each treatment cluster
+**# Assign random ranks within each treatment cluster
 set seed 54321
 gen rand = runiform()
 bysort cluster_id (rand): gen rank = _n
 
-* Treatment Assignment
+**# Treatment Assignment
 gen individual_arm = ""
 bysort cluster_id: replace individual_arm = "only info" if treat_cluster == 1
 bysort cluster_id: replace individual_arm = "info plus cash" if treat_cluster == 1 & rank > 8 & rank <= 12
 bysort cluster_id: replace individual_arm = "info plus fees paid" if treat_cluster == 1 & rank > 12 & rank <= 16
 
-* Save individual assignments
+**# Save individual assignments
 keep cluster_id id individual_arm
 save "${CLEAN}\individual_arm_assignment.dta", replace
 
@@ -87,13 +87,13 @@ use "${CLEAN}\eligible_clusters.dta", clear
 merge m:1 cluster_id using "${CLEAN}\cluster_assignment.dta", nogen
 merge m:1 cluster_id id using "${CLEAN}\individual_arm_assignment.dta", nogen
 
-* pure control cluster
+**# pure control cluster
 replace individual_arm = "pure control" if treat_cluster == 0
 
-* Order variables for clarity
+**# Order variables for clarity
 order cluster_id cluster_mothers treat_cluster individual_arm id
 
-* Save final randomised dataset
+**# Save final randomised dataset
 save "${CLEAN}\randomized_final_data.dta", replace
 
 
@@ -101,7 +101,7 @@ save "${CLEAN}\randomized_final_data.dta", replace
 **# Data Cleaning and Variable Deriving for Balance Test***
 ************************************************************
 
-* mother and child age
+**# mother and child age
 ren selected_ch_age child_age
 ren res_age mother_age
 
@@ -109,14 +109,14 @@ destring mother_age, replace
 destring res_marr, replace
 rename res_marr marital_status
 
-* mothers marrtial status
+**# mothers marrtial status
 label define marital_status 1 "Never Married" 2 "Divorced" 3 "Married, living with spouse" 4"Separated" 5 "Widowed" 6 "Abandoned"
 
 label values marital_status marital_status
 
 gen married_mothers = (marital_status == 3)
 
-* Generate binary variables for employment status, education level, and food availability
+**# Generate binary variables for employment status, education level, and food availability
 rename c11 employment 
 rename b11_1 education_level
 rename d11 food_availability 
@@ -130,7 +130,7 @@ replace educated = inrange(education_level, 5, 14)
 gen yearly_food_availability  = inlist(food_availability , 3, 4)
 gen monthly_food_availability  = (food_availability  == 1)
 
-* child's sickness 
+**# child's sickness 
 ren d21 child_sick
 ren d25 child_age_birth
 
@@ -138,23 +138,22 @@ gen early_child_bear = 0
 replace early_child_bear = 1 if child_age_birth <= 18
 
 
-* daycare 
+**# daycare 
 ren e111 daycare_wtp
 recode daycare_wtp (-666 = .)
-
-* Children under 9
+**# Children under 9
 gen under9_b6_1 = b6_1 < 9
 gen under9_b6_2 = b6_2 < 9
 gen under9_b6_3 = b6_3 < 9
 egen under9 = rowtotal(under9_b6_1 under9_b6_2 under9_b6_3), missing
 
-* children under 15
+**# children under 15
 gen under15_b6_1 = b6_1 < 15
 gen under15_b6_2 = b6_2 < 15
 gen under15_b6_3 = b6_3 < 15
 egen under15 = rowtotal(under15_b6_1 under15_b6_2 under15_b6_3), missing
 
-* Household size 
+**# Household size 
 destring lino_1, replace
 destring lino_2, replace
 destring lino_3, replace
@@ -164,16 +163,16 @@ replace hh_size = hh_size + (lino_1 != .)
 replace hh_size = hh_size + (lino_2 != .)
 replace hh_size = hh_size + (lino_3 != .)
 
-* total income 
+**# total income 
 destring tot_income, replace
 ren tot_income hh_month_hh
 gen hh_per_capita =  hh_month_hh / hh_size
 
-* Household expenditure
+**# Household expenditure
 mdesc 
 gen expenditure_household = i21 + i210 + i211 + i212 + i213 + i214 + i215 + i216 + i217 + i218 + i219
 
-* savings 
+**# savings 
 rename j1 savings
 *debt
 rename j5 debt_loans
